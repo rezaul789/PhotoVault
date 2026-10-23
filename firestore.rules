@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isValidTimestamp(val) {
+      return val is timestamp && val <= request.time;
+    }
+
+    function isValidCloudMediaItem(data, userId) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'mediaType', 'albumName', 'originalFileName', 'fileSizeBytes', 'encryptionAlgorithm', 'ivBase64', 'encryptedDataPayload', 'checksum', 'isFavorite', 'isDecoy', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'userId', 'title', 'mediaType', 'albumName', 'originalFileName', 'fileSizeBytes', 'encryptionAlgorithm', 'ivBase64', 'encryptedDataPayload', 'checksum', 'isFavorite', 'isDecoy', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() > 0 && data.id.size() <= 128
+        && data.userId == userId
+        && data.title is string && data.title.size() <= 256
+        && data.mediaType in ['PHOTO', 'VIDEO', 'NOTE', 'AUDIO']
+        && data.albumName is string && data.albumName.size() <= 128
+        && data.originalFileName is string && data.originalFileName.size() <= 256
+        && data.fileSizeBytes is int && data.fileSizeBytes >= 0
+        && data.encryptionAlgorithm is string && data.encryptionAlgorithm.size() <= 64
+        && data.ivBase64 is string && data.ivBase64.size() <= 128
+        && data.encryptedDataPayload is string
+        && data.checksum is string && data.checksum.size() <= 128
+        && data.isFavorite is bool
+        && data.isDecoy is bool
+        && isValidTimestamp(data.createdAt)
+        && isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidVaultSetting(data, userId) {
+      return data.keys().hasAll(['id', 'userId', 'backupEnabled', 'totalBackupSizeBytes', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'userId', 'backupEnabled', 'lastBackupTime', 'totalBackupSizeBytes', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() > 0 && data.id.size() <= 64
+        && data.userId == userId
+        && data.backupEnabled is bool
+        && (!('lastBackupTime' in data) || isValidTimestamp(data.lastBackupTime))
+        && data.totalBackupSizeBytes is int && data.totalBackupSizeBytes >= 0
+        && isValidTimestamp(data.createdAt)
+        && isValidTimestamp(data.updatedAt);
+    }
+
+    match /users/{userId}/cloud_vault/{mediaId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.id == mediaId
+        && isValidCloudMediaItem(request.resource.data, userId);
+      allow update: if isOwner(userId)
+        && request.resource.data.id == mediaId
+        && (resource == null || !('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)
+        && isValidCloudMediaItem(request.resource.data, userId);
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/vault_settings/{settingId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.id == settingId
+        && isValidVaultSetting(request.resource.data, userId);
+      allow update: if isOwner(userId)
+        && request.resource.data.id == settingId
+        && (resource == null || !('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)
+        && isValidVaultSetting(request.resource.data, userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

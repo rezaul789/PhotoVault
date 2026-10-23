@@ -1,0 +1,124 @@
+{
+  "entities": {
+    "CloudMediaItem": {
+      "title": "CloudMediaItem",
+      "description": "An encrypted photo, video, audio, or secret note stored in the secure cloud vault",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the encrypted media item"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner Google user ID"
+        },
+        "title": {
+          "type": "string",
+          "description": "Display title or name of the media file"
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": ["PHOTO", "VIDEO", "NOTE", "AUDIO"],
+          "description": "Type of media"
+        },
+        "albumName": {
+          "type": "string",
+          "description": "Name of the vault album"
+        },
+        "originalFileName": {
+          "type": "string",
+          "description": "Original filename before encryption"
+        },
+        "fileSizeBytes": {
+          "type": "integer",
+          "description": "Size of the media file in bytes"
+        },
+        "encryptionAlgorithm": {
+          "type": "string",
+          "description": "Cipher algorithm, e.g. AES-256-GCM"
+        },
+        "ivBase64": {
+          "type": "string",
+          "description": "Base64-encoded Initialization Vector (IV) for AES"
+        },
+        "encryptedDataPayload": {
+          "type": "string",
+          "description": "Encrypted binary payload encoded in Base64"
+        },
+        "checksum": {
+          "type": "string",
+          "description": "SHA-256 integrity checksum"
+        },
+        "isFavorite": {
+          "type": "boolean",
+          "description": "Whether the media is marked as favorite"
+        },
+        "isDecoy": {
+          "type": "boolean",
+          "description": "Whether this item belongs to the decoy fake vault"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp. Must be FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp. Must be FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["id", "userId", "title", "mediaType", "albumName", "originalFileName", "fileSizeBytes", "encryptionAlgorithm", "ivBase64", "encryptedDataPayload", "checksum", "isFavorite", "isDecoy", "createdAt", "updatedAt"]
+    },
+    "VaultSetting": {
+      "title": "VaultSetting",
+      "description": "Cloud vault backup configuration and synchronization metadata",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Settings document ID, usually 'default'"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner Google user ID"
+        },
+        "backupEnabled": {
+          "type": "boolean",
+          "description": "Whether automatic cloud backup is enabled"
+        },
+        "lastBackupTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last successful backup. Must be FieldValue.serverTimestamp()"
+        },
+        "totalBackupSizeBytes": {
+          "type": "integer",
+          "description": "Total bytes of encrypted vault backups"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp. Must be FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Update timestamp. Must be FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["id", "userId", "backupEnabled", "totalBackupSizeBytes", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/cloud_vault/{mediaId}": {
+      "schema": "CloudMediaItem",
+      "description": "User encrypted cloud vault media items"
+    },
+    "/users/{userId}/vault_settings/{settingId}": {
+      "schema": "VaultSetting",
+      "description": "User cloud backup settings and status"
+    }
+  }
+}

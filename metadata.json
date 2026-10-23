@@ -1,0 +1,6 @@
+{
+  "name": "Gallery Vault",
+  "description": "Secure private photo and video vault with AES-256 encryption, biometric authentication, and cloud backup",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
